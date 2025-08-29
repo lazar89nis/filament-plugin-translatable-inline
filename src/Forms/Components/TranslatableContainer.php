@@ -19,6 +19,7 @@ class TranslatableContainer extends Component
     protected bool | Closure $required = false;
     protected array $requiredLocales = [];
     protected bool | Closure $showCopyButton = false;
+    protected bool | Closure $showTranslateButton = false;
 
     final public function __construct(array $schema = [])
     {
@@ -130,6 +131,13 @@ class TranslatableContainer extends Component
         return $this;
     }
 
+    public function showTranslateButton(bool | Closure $condition = true): self
+    {
+        $this->showTranslateButton = $condition;
+
+        return $this;
+    }
+
     private function isLocaleRequired(string $locale): bool
     {
         if ($this->isOnlyMainLocaleRequiredLocal()) {
@@ -161,4 +169,10 @@ class TranslatableContainer extends Component
     {
         return (bool) $this->evaluate($this->showCopyButton);
     }
+
+    public function shouldShowTranslateButton(): bool
+    {
+        return (bool) $this->evaluate($this->showTranslateButton);
+    }
+
 }
