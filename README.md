@@ -98,14 +98,19 @@ If you have more than one required locales you can pass an array to this method.
 
 #### showCopyButton
 
-Enable a copy button that copies the main language value to all other languages:
+Enable copy buttons that copy the current language value to all other languages:
 
 ```php
 TranslatableContainer::make(
     Forms\Components\TextInput::make('title')
 )
-    ->showCopyButton()
+    ->showCopyButton()  // Copy only to empty fields
+    ->showCopyButton(true, true)  // Copy to all fields (overwrite existing)
 ```
+
+**Parameters:**
+- **First parameter**: Enable/disable copy functionality (default: `true`)
+- **Second parameter**: `overwriteFilled` - if `true`, overwrites existing content; if `false`, only copies to empty fields (default: `false`)
 
 #### showTranslateButton
 
@@ -115,39 +120,42 @@ Enable automatic translation using Google Translate API. This adds translate but
 TranslatableContainer::make(
     Forms\Components\TextInput::make('title')
 )
-    ->showTranslateButton()
+    ->showTranslateButton()           // Translate only to empty fields
+    ->showTranslateButton(true, true) // Translate to all fields (overwrite existing)
 ```
+
+**Parameters:**
+- **First parameter**: Enable/disable translation functionality (default: `true`)
+- **Second parameter**: `overwriteFilled` - if `true`, translates to all languages (overwrites existing); if `false`, only translates to empty languages (default: `false`)
 
 **Configuration:**
 
-You can configure Google Translate in two ways:
-
-**Option 1: Plugin-specific config (recommended)**
-1. Publish the config file:
-```bash
-php artisan vendor:publish --tag="filament-plugin-translatable-inline-config"
-```
-
-2. Add to your `.env` file:
+The plugin uses Laravel's standard services configuration. Add to your `.env` file:
 ```env
-GOOGLE_TRANSLATE_ENABLED=true
 GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 ```
 
-**Option 2: Use existing services config**
-Add to your `.env` file:
-```env
-GOOGLE_TRANSLATE_ENABLED=true
-GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
+Or add to your `config/services.php`:
+```php
+'google' => [
+    'translate_key' => env('GOOGLE_TRANSLATE_API_KEY'),
+],
 ```
 
-3. Get your Google Translate API key from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+Get your Google Translate API key from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 
 **How it works:**
 - Each language field gets a "Translate" button in the hint area
-- Clicking the button translates the current field's text to all other empty languages
-- Only translates to languages that don't have content yet
+- Clicking the button translates the current field's text to other languages
+- Behavior depends on the `overwriteFilled` parameter:
+  - `false` (default): Only translates to empty languages
+  - `true`: Translates to all languages (overwrites existing content)
 - Uses Google Translate API for high-quality translations
+
+**Component Behavior:**
+- Main component (first language) retains its helper text and hints
+- Additional language components have helper text and hints removed for cleaner UI
+- All actions (copy/translate) appear as hint actions below each field
 
 ## Tipps & Hints
 

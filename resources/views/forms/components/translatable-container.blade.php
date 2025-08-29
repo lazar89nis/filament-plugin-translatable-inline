@@ -13,41 +13,6 @@
                         this.open = Boolean($refs.additionalContainer.querySelector(':invalid'));
                     }
                 },
-                copyToAllLocales() {
-                
-                    const locales = @js($getTranslatableLocales()->toArray());
-                    const mainLocale = locales[0];
-                    const statePath = '{{ $getStatePath() }}';
-                    
-                    // Get the main locale value
-                    const mainValue = $wire.get(statePath + '.' + mainLocale);
-                    if (mainValue && mainValue !== '') {
-                        // Copy to all other locales
-                        locales.forEach(locale => {
-                            if (locale !== mainLocale) {
-                                $wire.set(statePath + '.' + locale, mainValue);
-                            }
-                        });
-                        
-                        // Update form inputs to reflect the changes
-                        locales.forEach(locale => {
-                            if (locale !== mainLocale) {
-                                const fullPath = statePath + '.' + locale;
-                                const inputs = document.querySelectorAll('[name*=\'' + fullPath + '\'], [wire\\:model*=\'' + fullPath + '\']');
-                                
-                                inputs.forEach(input => {
-                                    if (input.type === 'text' || input.type === 'textarea' || input.tagName === 'TEXTAREA') {
-                                        input.value = mainValue;
-                                        input.dispatchEvent(new Event('input', { bubbles: true }));
-                                        input.dispatchEvent(new Event('change', { bubbles: true }));
-                                    }
-                                });
-                            }
-                        });
-                    }
-                },
-                
-
         }"
             @form-validation-error.window="
                 $nextTick(() => {
@@ -76,28 +41,14 @@
                 @foreach($getTranslatableLocales() as $locale)
                     <div class="text-xs rounded-full p-1 shadow-sm ring-2 ring-inset ring-gray-950/10 dark:ring-white/20"
                          @if (!$isLocaleStateEmpty($locale))
-                             style="border: 1px forestgreen solid"
+                             style="border: 2px forestgreen solid"
                             @endif
                     >
                         <div class="px-1">{{ $locale }}</div>
                     </div>
                 @endforeach
             </div>
-
-            @if($shouldShowCopyButton())
-                <div class="flex-shrink-0">
-                    <button
-                        type="button"
-                        class="inline-flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors duration-200"
-                        title="Copy to all languages"
-                        @click.stop="copyToAllLocales()"
-                    >
-                        <x-filament::icon icon="heroicon-m-document-duplicate" class="h-4 w-4"/>
-                    </button>
-                </div>
-            @endif
         </div>
-
         <div x-ref="additionalContainer"
              x-show="open"
         >
