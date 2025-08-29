@@ -8,6 +8,8 @@ use Filament\Forms\Components\Component;
 use Filament\Forms\ComponentContainer;
 use Illuminate\Support\Collection;
 use Closure;
+use Filament\Forms\Components\Actions\Action;
+use Illuminate\Support\Facades\Http;
 
 class TranslatableContainer extends Component
 {
@@ -79,11 +81,28 @@ class TranslatableContainer extends Component
 
     public function cloneComponent(Component $component, string $locale): Component
     {
-        return $component
+        $clonedComponent = $component
             ->getClone()
             ->meta('locale', $locale)
             ->label("{$component->getLabel()} ({$locale})")
             ->statePath($locale);
+
+        // Add translate action if enabled and this is not the main locale
+        if ($this->shouldShowTranslateButton() ) {
+            $clonedComponent->hintActions([
+                Action::make('translate_from_' . $locale)
+                    ->label('Translate')
+                    ->icon('heroicon-m-language')
+                    ->color('info')
+                    ->size('sm')
+                    ->tooltip('Translate all empty fields using ' . $locale . ' as source')
+                    ->action(function () use ($locale) {
+                        $this->translateFromLocale($locale);
+                    })
+            ]);
+        }
+
+        return $clonedComponent;
     }
 
     public function getTranslatableLocales(): Collection
@@ -173,6 +192,71 @@ class TranslatableContainer extends Component
     public function shouldShowTranslateButton(): bool
     {
         return (bool) $this->evaluate($this->showTranslateButton);
+    }
+
+
+    public function translateFromLocale(string $sourceLocale): void
+    {
+        // Get the source text from the current locale
+        $sourceText = $this->getState()[$sourceLocale] ?? '';
+        
+        if (empty($sourceText)) {
+            return;
+        }
+
+        // Get all target locales (excluding the source)
+        $targetLocales = $this->getTranslatableLocales()
+            ->filter(fn($locale) => $locale !== $sourceLocale)
+            ->filter(fn($locale) => empty($this->getState()[$locale] ?? ''))
+            ->values();
+
+        if ($targetLocales->isEmpty()) {
+            return;
+        }
+
+        // Get Google Translate API key from config
+        $apiKey = config('services.google.translate_key');
+
+        
+        if (empty($apiKey)) {
+            return;
+        }
+
+        // Translate to each target locale
+        foreach ($targetLocales as $targetLocale) {
+            try {
+                $translatedText = $this->translateWithGoogle($sourceText, $sourceLocale, $targetLocale, $apiKey);
+                
+                if ($translatedText) {
+                    // Update the state for this locale
+                    $currentState = $this->getState();
+                    $currentState[$targetLocale] = $translatedText;
+                    $this->state($currentState);
+                }
+            } catch (\Exception $e) {
+                // Log error or handle gracefully
+                continue;
+            }
+        }
+    }
+
+    private function translateWithGoogle(string $text, string $sourceLocale, string $targetLocale, string $apiKey): ?string
+    {
+        $url = 'https://translation.googleapis.com/language/translate/v2';
+        
+        $response = Http::get($url, [
+            'q' => $text,
+            'source' => $sourceLocale,
+            'target' => $targetLocale,
+            'key' => $apiKey,
+        ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data']['translations'][0]['translatedText'] ?? null;
+        } 
+
+        return null;
     }
 
 }

@@ -96,6 +96,59 @@ Sometimes you might want the field to be required, but only for the primary lang
 
 If you have more than one required locales you can pass an array to this method.
 
+#### showCopyButton
+
+Enable a copy button that copies the main language value to all other languages:
+
+```php
+TranslatableContainer::make(
+    Forms\Components\TextInput::make('title')
+)
+    ->showCopyButton()
+```
+
+#### showTranslateButton
+
+Enable automatic translation using Google Translate API. This adds translate buttons to each language field:
+
+```php
+TranslatableContainer::make(
+    Forms\Components\TextInput::make('title')
+)
+    ->showTranslateButton()
+```
+
+**Configuration:**
+
+You can configure Google Translate in two ways:
+
+**Option 1: Plugin-specific config (recommended)**
+1. Publish the config file:
+```bash
+php artisan vendor:publish --tag="filament-plugin-translatable-inline-config"
+```
+
+2. Add to your `.env` file:
+```env
+GOOGLE_TRANSLATE_ENABLED=true
+GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
+```
+
+**Option 2: Use existing services config**
+Add to your `.env` file:
+```env
+GOOGLE_TRANSLATE_ENABLED=true
+GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
+```
+
+3. Get your Google Translate API key from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+
+**How it works:**
+- Each language field gets a "Translate" button in the hint area
+- Clicking the button translates the current field's text to all other empty languages
+- Only translates to languages that don't have content yet
+- Uses Google Translate API for high-quality translations
+
 ## Tipps & Hints
 
 ### Validation
