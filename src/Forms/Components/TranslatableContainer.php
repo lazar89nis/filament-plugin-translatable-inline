@@ -7,6 +7,7 @@ namespace Mvenghaus\FilamentPluginTranslatableInline\Forms\Components;
 use Filament\Forms\Components\Component;
 use Filament\Forms\ComponentContainer;
 use Illuminate\Support\Collection;
+use Closure;
 
 class TranslatableContainer extends Component
 {
@@ -14,8 +15,10 @@ class TranslatableContainer extends Component
 
     protected Component $baseComponent;
 
-    protected bool $onlyMainIsRequired = false;
+    protected bool | Closure $onlyMainIsRequired = false;
+    protected bool | Closure $required = false;
     protected array $requiredLocales = [];
+    protected bool | Closure $showCopyButton = false;
 
     final public function __construct(array $schema = [])
     {
@@ -99,9 +102,16 @@ class TranslatableContainer extends Component
         return empty($this->getState()[$locale]);
     }
 
-    public function onlyMainLocaleRequired(): self
+    public function onlyMainLocaleRequired(bool | Closure $condition = true): self
     {
-        $this->onlyMainIsRequired = true;
+        $this->onlyMainIsRequired = $condition;
+
+        return $this;
+    }
+
+    public function localesRequired(bool | Closure $condition = true): self
+    {
+        $this->required = $condition;
 
         return $this;
     }
@@ -113,9 +123,16 @@ class TranslatableContainer extends Component
         return $this;
     }
 
+    public function showCopyButton(bool | Closure $condition = true): self
+    {
+        $this->showCopyButton = $condition;
+
+        return $this;
+    }
+
     private function isLocaleRequired(string $locale): bool
     {
-        if ($this->onlyMainIsRequired) {
+        if ($this->isOnlyMainLocaleRequiredLocal()) {
             return ($locale === $this->getTranslatableLocales()->first());
         }
 
@@ -123,10 +140,25 @@ class TranslatableContainer extends Component
             return true;
         }
 
-        if (empty($this->requiredLocales) && $this->baseComponent->isRequired()) {
+        if (empty($this->requiredLocales) && $this->isRequiredLocal()) {
             return true;
         }
 
         return false;
+    }
+
+    public function isRequiredLocal(): bool
+    {
+        return (bool) $this->evaluate($this->required);
+    }
+
+    public function isOnlyMainLocaleRequiredLocal(): bool
+    {
+        return (bool) $this->evaluate($this->onlyMainIsRequired);
+    }
+
+    public function shouldShowCopyButton(): bool
+    {
+        return (bool) $this->evaluate($this->showCopyButton);
     }
 }
